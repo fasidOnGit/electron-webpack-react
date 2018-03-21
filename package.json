@@ -3,19 +3,35 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "build": "react-scripts build",
+    "electron": "electron .",
+    "react-start": "react-scripts start",
+    "start": "concurrently \"yarn react-start\" \"wait-on http://localhost:3000/ && yarn dev\"",
     "dev": "electron-webpack dev",
     "compile": "electron-webpack",
     "dist": "yarn compile && electron-builder",
     "dist:dir": "yarn dist --dir -c.compression=store -c.mac.identity=null"
   },
   "dependencies": {
-    "source-map-support": "^0.5.4"
+    "source-map-support": "^0.5.4",
+    "moment": "^2.21.0",
+    "moment-timezone": "^0.5.14",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-redux": "^5.0.7",
+    "react-scripts": "1.1.1",
+    "redux": "^3.7.2",
+    "redux-thunk": "^2.2.0"
   },
   "devDependencies": {
+    "concurrently": "^3.5.1",
     "electron": "1.8.4",
     "electron-builder": "^20.5.1",
     "electron-webpack": "^1.13.0",
-    "webpack": "^3.11.0"
+    "webpack": "^3.11.0",
+    "redux-immutable-state-invariant": "^2.1.0",
+    "redux-mock-store": "^1.5.1",
+    "wait-on": "^2.1.0"
   },
   "resolutions": {
     "webpack-sources": "1.0.1"

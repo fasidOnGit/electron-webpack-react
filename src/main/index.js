@@ -1,34 +1,127 @@
 'use strict'
 
-import { app, BrowserWindow } from 'electron'
-import * as path from 'path'
-import { format as formatUrl } from 'url'
+const electron = require('electron');
+const app = electron.app;
+const BrowserWindow = electron.BrowserWindow;
+const ipcMain = electron.ipcMain;
+const Menu = electron.Menu;
+
+const path = require('path')
+const formatUrl = require('url').format;
+
+let mainWindow , widget;
+let widgetShow = true;
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // global reference to mainWindow (necessary to prevent window from being garbage collected)
-let mainWindow
+
 
 function createMainWindow() {
-  const window = new BrowserWindow()
+  const screen = require("electron").screen;
+  const size = screen.getPrimaryDisplay().workAreaSize;
+  const widgetConfig = {
+    // width:130,
+    //  height:38,
+    //  x:size.width - 100,
+    //  y:size.height - 100,
+    //  resizable:false,
+    //  transparent: false,
+    //  frame: false,
+    //  minimizable: false,
+    //  maximizable :false,
+    //  closable:false,
+     alwaysOnTop:true,
+     show:true,
+     backgroundColor:'#34495e'
+  }
+  const window = new BrowserWindow({width: 400, height: 400});
+  const widget = new BrowserWindow(widgetConfig);
+  widget.setAlwaysOnTop(true);
+  widget.setSkipTaskbar(true);
 
+  
+
+  const widgetUrl = formatUrl({
+    pathname: path.join(__dirname, '/../renderer/widget.html'),
+    protocol: 'file:',
+    slashes: true
+  });
   if (isDevelopment) {
     window.webContents.openDevTools()
+    widget.webContents.openDevTools()
   }
 
-  if (isDevelopment) {
-    window.loadURL(`http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`)
+  if (true) {
+    window.loadURL(`http://localhost:3000`)
+    window.webContents.on('did-finish-load' , _=>{
+      widget.loadURL(widgetUrl);
+    })
   }
   else {
     window.loadURL(formatUrl({
       pathname: path.join(__dirname, 'index.html'),
-      protocol: 'file',
+      protocol: 'file:',
       slashes: true
     }))
   }
 
+  const label = app.getName();
+//Template for the Menu
+const template = [
+  {
+    label,
+    submenu:[{
+      label: `Show/Hide Widget`,
+      click: () => {
+        widgetShow = !widgetShow;
+        if(widgetShow){
+          show(widget);
+        }else{
+          hide(widget);
+        }
+        
+      },
+      role: 'widget'
+    },
+    {
+      type:'separator'
+    },
+    {
+      label:'Quit',
+      click: _=> {
+        app.quit();
+        widget.destroy();
+      },
+      accelerator: 'Cmd+Q'
+    }]
+  }
+];
+const menu = Menu.buildFromTemplate(template);
+Menu.setApplicationMenu(menu);
   window.on('closed', () => {
     mainWindow = null
+    widget.destroy();
+  });
+  widget.on('closed', function () {
+    widget = null;
+  })
+
+  ipcMain.on("start" , (event, args)=>{
+    console.log("received");
+  })
+
+  ipcMain.on("timer" , (event ,args)=>{
+    widget.webContents.send("timer-start", args.start);
+  });
+
+  ipcMain.on("hide", (event)=>{
+    widgetShow=!widgetShow;
+    hide(widget);
+  });
+
+  ipcMain.on("timer-state-change" , (event, args)=>{
+    window.webContents.send("timer-state-change" , args);
   })
 
   window.webContents.on('devtools-opened', () => {
@@ -60,3 +153,11 @@ app.on('activate', () => {
 app.on('ready', () => {
   mainWindow = createMainWindow()
 })
+
+
+function hide(win){
+  return win.hide();
+}
+function show(win){
+  return win.show();
+}

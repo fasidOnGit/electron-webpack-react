@@ -1,2 +1,65 @@
-// Initial welcome page. Delete the following line to remove it.
-'use strict';const styles=document.createElement('style');styles.innerText=`@import url(https://unpkg.com/spectre.css/dist/spectre.min.css);.empty{display:flex;flex-direction:column;justify-content:center;height:100vh;position:relative}.footer{bottom:0;font-size:13px;left:50%;opacity:.9;position:absolute;transform:translateX(-50%);width:100%}`;const vueScript=document.createElement('script');vueScript.setAttribute('type','text/javascript'),vueScript.setAttribute('src','https://unpkg.com/vue'),vueScript.onload=init,document.head.appendChild(vueScript),document.head.appendChild(styles);function init(){Vue.config.devtools=false,Vue.config.productionTip=false,new Vue({data:{versions:{electron:process.versions.electron,electronWebpack:require('electron-webpack/package.json').version}},methods:{open(b){require('electron').shell.openExternal(b)}},template:`<div><div class=empty><p class="empty-title h5">Welcome to your new project!<p class=empty-subtitle>Get started now and take advantage of the great documentation at hand.<div class=empty-action><button @click="open('https://webpack.electron.build')"class="btn btn-primary">Documentation</button> <button @click="open('https://electron.atom.io/docs/')"class="btn btn-primary">Electron</button><br><ul class=breadcrumb><li class=breadcrumb-item>electron-webpack v{{ versions.electronWebpack }}</li><li class=breadcrumb-item>electron v{{ versions.electron }}</li></ul></div><p class=footer>This intitial landing page can be easily removed from <code>src/renderer/index.js</code>.</p></div></div>`}).$mount('#app')}
+require('../main/index');
+
+const {ipcRenderer} = require('electron')
+const React = require('react');
+const ReactDOM = require('react-dom');
+
+let working = false;
+
+let span = document.getElementById("timer");
+ipcRenderer.on("timer-start", (event, args)=>{
+    let time=args.timer.hours+":"+args.timer.minutes;
+    ReactDOM.render(
+       time ,span
+    );
+    working = args.working;
+    renderImgSrc(working);
+});
+
+document.getElementById('hide').addEventListener('click' , _=>{
+    ipcRenderer.send('hide');
+});
+
+document.getElementById('play-pause').addEventListener('click' , _=>{
+    working = !working;
+    renderImgSrc(working);
+    ipcRenderer.send('timer-state-change' , {working});
+})
+
+function renderImgSrc(working){
+    let src;
+    let playPoint = document.getElementById('playPoint');
+    if(working){
+        src="../img/stop.svg";
+        playPoint.className = 'glow';
+    }else{
+        src="../img/play.svg";
+        playPoint.className = 'not-glow';
+    }
+
+    ReactDOM.render(
+        React.createElement(
+            "img",
+            {src , id:'playStop'}
+        )
+        ,document.getElementById('play-pause')
+    )
+}
+
+function onClick(evt){
+    working = !working;
+    playPause(working);
+    ipcRenderer.send("timer-state-change" , {working})
+}
+// playPause(working);
+
+function playPause(work){
+    let img = document.getElementById('play-pause');
+    if(work){
+        img.src="../img/stop.svg"
+    }else{
+        img.src="../img/play.svg"
+    }
+}
+
+
